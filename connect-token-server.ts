@@ -21,7 +21,7 @@ app.get('/connect-token', async (req: Request, res: Response) => {
   try {
     const tokenRes = await pd.createConnectToken({
       external_user_id: process.env.PIPEDREAM_EXTERNAL_USER_ID!,
-      allowed_origins: ["http://localhost:3000"], // 必要に応じて変更
+      allowed_origins: (process.env.ALLOWED_ORIGINS || "http://localhost:3000").split(","),
     });
     res.json(tokenRes); // { token, expires_at, connect_link_url }
   } catch (err) {
