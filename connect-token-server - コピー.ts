@@ -14,7 +14,7 @@ const envFile = process.env.DOTENV_FILE || '.env';
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = 3001;
 
 const pd = createBackendClient({
   environment: process.env.PIPEDREAM_ENVIRONMENT as 'development' | 'production',

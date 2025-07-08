@@ -5,7 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "dev:personal": "cross-env DOTENV_FILE=.env.personal tsx connect-token-server.ts",
+    "dev:company": "cross-env DOTENV_FILE=.env.company tsx connect-token-server.ts",
+    "dev": "tsx connect-token-server.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.3",
+    "cross-env": "^7.0.3",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
