@@ -79,7 +79,7 @@ async function withLock<T>(fn: () => Promise<T>): Promise<T> {
   try { return await fn(); } finally { release(); lock = null; }
 }
 
-app.get('/google/access-token', rateLimit as any, async (req: Request, res: Response) => {
+app.get('/google/access-token', rateLimit as any, async (req: Request, res: Response): Promise<void> => {
   try {
     const AUTH_HEADER = process.env.GMAIL_TOKEN_AUTH_HEADER || 'Authorization';
     const API_KEY = process.env.GMAIL_TOKEN_API_KEY || '';
@@ -90,13 +90,15 @@ app.get('/google/access-token', rateLimit as any, async (req: Request, res: Resp
     // Authn
     const auth = req.header(AUTH_HEADER);
     if (!API_KEY || !auth || auth !== `Bearer ${API_KEY}`) {
-      return res.status(401).json({ error: 'unauthorized' });
+      res.status(401).json({ error: 'unauthorized' });
+      return;
     }
 
     // Scope check
     const scope = String((req.query.scope as string) || 'https://www.googleapis.com/auth/gmail.readonly');
     if (!ALLOWED_SCOPES.includes(scope)) {
-      return res.status(403).json({ error: 'forbidden_scope' });
+      res.status(403).json({ error: 'forbidden_scope' });
+      return;
     }
 
     const now = Date.now();
@@ -104,7 +106,8 @@ app.get('/google/access-token', rateLimit as any, async (req: Request, res: Resp
     if (cached && cached.exp - 30_000 > now) {
       const ttl = Math.max(1, Math.floor((cached.exp - now) / 1000));
       res.setHeader('Cache-Control', 'no-store');
-      return res.json({ access_token: cached.token, expires_in: ttl });
+      res.json({ access_token: cached.token, expires_in: ttl });
+      return;
     }
 
     const result = await withLock(async () => {
@@ -147,12 +150,17 @@ app.get('/google/access-token', rateLimit as any, async (req: Request, res: Resp
       }
     });
 
-    if (!result) return res.status(500).json({ error: 'token_error' });
+    if (!result) {
+      res.status(500).json({ error: 'token_error' });
+      return;
+    }
     res.setHeader('Cache-Control', 'no-store');
-    return res.json(result);
+    res.json(result);
+    return;
   } catch (e: any) {
     console.error('[google/access-token] error', { message: e?.message });
-    return res.status(500).json({ error: 'token_error' });
+    res.status(500).json({ error: 'token_error' });
+    return;
   }
 });
 
