@@ -139,9 +139,31 @@ app.get('/google/access-token', rateLimit as any, async (req: Request, res: Resp
           body: params.toString(),
           signal: ctrl.signal,
         } as RequestInit);
-        if (!r.ok) return null;
-        const d: any = await r.json();
-        if (typeof d.access_token !== 'string') return null;
+        const bodyText = await r.text();
+        if (!r.ok) {
+          console.error('[token-server][google] upstream error', {
+            status: r.status,
+            statusText: r.statusText,
+            body: bodyText.slice(0, 200),
+          });
+          return null;
+        }
+        let d: any;
+        try {
+          d = bodyText ? JSON.parse(bodyText) : {};
+        } catch (err) {
+          console.error('[token-server][google] json parse failed', {
+            message: (err as any)?.message || err,
+            body: bodyText.slice(0, 200),
+          });
+          return null;
+        }
+        if (typeof d.access_token !== 'string') {
+          console.error('[token-server][google] missing access_token', {
+            keys: Object.keys(d || {}),
+          });
+          return null;
+        }
         const exp = Date.now() + (typeof d.expires_in === 'number' ? d.expires_in : 1800) * 1000;
         tokenCache.set(scope, { token: d.access_token, exp });
         return { access_token: d.access_token, expires_in: d.expires_in || 1800 };
